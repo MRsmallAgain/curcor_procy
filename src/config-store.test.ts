@@ -3,13 +3,14 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import type { Config } from "./config.ts";
+import { DEFAULT_BODY_LIMIT_BYTES, type Config } from "./config.ts";
 import { ConfigStore } from "./config-store.ts";
 import { envProxyApiKeys } from "./proxy-api-keys.ts";
 
 const baseEnv: Config = {
   port: 8787,
   host: "127.0.0.1",
+  bodyLimitBytes: DEFAULT_BODY_LIMIT_BYTES,
   cursorApiKey: "cursor-env",
   proxyApiKeys: [],
   connectAuthToken: undefined,

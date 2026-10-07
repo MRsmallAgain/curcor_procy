@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildAgentOptions, parseAgentRequestOptions, parseToolsPolicy } from "./agent-options.ts";
-import type { Config } from "./config.ts";
+import { DEFAULT_BODY_LIMIT_BYTES, type Config } from "./config.ts";
 
 const baseConfig: Config = {
   port: 8787,
   host: "127.0.0.1",
+  bodyLimitBytes: DEFAULT_BODY_LIMIT_BYTES,
   cursorApiKey: "test-key",
   proxyApiKeys: [],
   connectAuthToken: undefined,

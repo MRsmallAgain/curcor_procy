@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   authorize,
+  DEFAULT_BODY_LIMIT_BYTES,
   extractPresentedApiKey,
+  parseBodyLimitBytes,
   type Config,
 } from "./config.ts";
 import { envProxyApiKeys, newProxyApiKey } from "./proxy-api-keys.ts";
@@ -10,6 +12,7 @@ import { envProxyApiKeys, newProxyApiKey } from "./proxy-api-keys.ts";
 const base: Config = {
   port: 8787,
   host: "127.0.0.1",
+  bodyLimitBytes: DEFAULT_BODY_LIMIT_BYTES,
   cursorApiKey: "cursor-secret",
   proxyApiKeys: envProxyApiKeys("proxy-secret"),
   connectAuthToken: undefined,
@@ -66,4 +69,22 @@ test("authorize falls back to cursor key when proxy keys are unset", () => {
   const auth = authorize({ ...base, proxyApiKeys: [] }, {});
   assert.equal(auth.cursorApiKey, "cursor-secret");
   assert.equal(auth.method, "open");
+});
+
+test("parseBodyLimitBytes defaults to 64 MiB when unset", () => {
+  assert.equal(parseBodyLimitBytes(undefined), DEFAULT_BODY_LIMIT_BYTES);
+  assert.equal(parseBodyLimitBytes(""), DEFAULT_BODY_LIMIT_BYTES);
+  assert.equal(parseBodyLimitBytes("   "), DEFAULT_BODY_LIMIT_BYTES);
+});
+
+test("parseBodyLimitBytes accepts mb and raw bytes", () => {
+  assert.equal(parseBodyLimitBytes("64mb"), 64 * 1024 * 1024);
+  assert.equal(parseBodyLimitBytes("1m"), 1024 * 1024);
+  assert.equal(parseBodyLimitBytes("1048576"), 1048576);
+});
+
+test("parseBodyLimitBytes rejects invalid values", () => {
+  assert.throws(() => parseBodyLimitBytes("-1"), /positive/);
+  assert.throws(() => parseBodyLimitBytes("0"), /positive/);
+  assert.throws(() => parseBodyLimitBytes("64tb"), /BODY_LIMIT/);
 });
