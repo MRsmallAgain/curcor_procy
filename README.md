@@ -122,6 +122,20 @@ npm run docker:build:all
 
 Only one service should bind port `8787` at a time. See [PRIVACY.md](./PRIVACY.md) for details and SDK caveats.
 
+## Troubleshooting
+
+### HTTP 413 — “Request body is too large” (`FST_ERR_CTP_BODY_TOO_LARGE`)
+
+Fastify’s default request body cap is **1 MiB**, which is too small for multimodal `/v1/chat/completions` (long transcripts plus embedded images). This proxy now defaults to **64 MiB** via Fastify `bodyLimit`.
+
+| Fix | Action |
+| --- | --- |
+| **Proxy (this repo)** | Set `BODY_LIMIT=64mb` (or higher) in `.env`. Default is 64 MiB if unset. Rebuild/restart the container or process. |
+| **Reverse proxy** | If you terminate TLS in front of the proxy (nginx, Caddy, Traefik), raise the upstream body limit too (e.g. nginx `client_max_body_size 64m;`). |
+| **Clients** | Reduce inline image attachments; start a new chat after heavy screenshot threads. |
+
+Examples: `BODY_LIMIT=67108864`, `BODY_LIMIT=128mb`.
+
 ## Connect example
 
 ```bash

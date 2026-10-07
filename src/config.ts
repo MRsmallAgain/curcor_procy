@@ -16,9 +16,36 @@ const projectRoot = resolve(here, "..");
 export type Runtime = "local" | "cloud";
 export type AuthMethod = "proxy-key" | "cursor-key" | "open";
 
+/** Fastify default is 1 MiB; multimodal chat/completions need much more. */
+export const DEFAULT_BODY_LIMIT_BYTES = 64 * 1024 * 1024;
+
+export function parseBodyLimitBytes(raw: string | undefined): number {
+  const trimmed = raw?.trim();
+  if (!trimmed) return DEFAULT_BODY_LIMIT_BYTES;
+  const match = /^([0-9]+(?:\.[0-9]+)?)\s*([kmg]?b?)?$/i.exec(trimmed);
+  if (!match) {
+    const n = Number(trimmed);
+    if (!Number.isFinite(n) || n <= 0) {
+      throw new Error("BODY_LIMIT must be a positive number of bytes or a size like 64mb");
+    }
+    return Math.floor(n);
+  }
+  const value = Number(match[1]);
+  const unit = (match[2] ?? "").toLowerCase();
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error("BODY_LIMIT must be a positive size");
+  }
+  if (unit === "" || unit === "b") return Math.floor(value);
+  if (unit === "k" || unit === "kb") return Math.floor(value * 1024);
+  if (unit === "m" || unit === "mb") return Math.floor(value * 1024 * 1024);
+  if (unit === "g" || unit === "gb") return Math.floor(value * 1024 * 1024 * 1024);
+  throw new Error("BODY_LIMIT unit must be b, kb, mb, or gb");
+}
+
 export interface Config {
   port: number;
   host: string;
+  bodyLimitBytes: number;
   cursorApiKey: string;
   proxyApiKeys: ProxyApiKey[];
   connectAuthToken: string | undefined;
@@ -57,6 +84,7 @@ export function loadConfig(): Config {
   return {
     port: Number(process.env.PORT ?? 8787),
     host: process.env.HOST?.trim() || "127.0.0.1",
+    bodyLimitBytes: parseBodyLimitBytes(process.env.BODY_LIMIT),
     cursorApiKey: requiredEnv("CURSOR_API_KEY"),
     proxyApiKeys: envProxyApiKeys(process.env.PROXY_API_KEY),
     connectAuthToken: process.env.CONNECT_AUTH_TOKEN?.trim() || undefined,

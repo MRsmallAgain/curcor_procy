@@ -50,7 +50,11 @@ function meterAuthUsage(
 
 export function buildServer(configStore: ConfigStore) {
   const logPolicy = getLogPolicy();
-  const app = Fastify({ logger: fastifyLoggingEnabled(logPolicy) });
+  const bodyLimit = configStore.get().bodyLimitBytes;
+  const app = Fastify({
+    logger: fastifyLoggingEnabled(logPolicy),
+    bodyLimit,
+  });
   registerConnectGateway(app, configStore);
   if (requestLoggingEnabled(logPolicy)) {
     registerRequestLogging(app);
